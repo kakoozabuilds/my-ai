@@ -107,6 +107,10 @@
         <textarea id="aiQuestion" rows="4" placeholder="Ask anything. The AI will source information to answer..."></textarea>
     </div>
 
+    <div class="input-group" style="text-align: right; margin-top: -10px;">
+        <span id="clearKeyLink" style="font-size: 0.85rem; color: #d9383a; cursor: pointer; text-decoration: underline;">Clear Saved Key</span>
+    </div>
+
     <button id="submitBtn">Ask My AI</button>
 
     <div id="statusMessage" class="status">⚡ Connection secure. Processing question...</div>
@@ -121,6 +125,12 @@
         if (savedKey) {
             document.getElementById("apiKeyField").value = savedKey;
         }
+    });
+
+    document.getElementById("clearKeyLink").addEventListener("click", () => {
+        localStorage.removeItem("personal_ai_key");
+        document.getElementById("apiKeyField").value = "";
+        alert("Saved API key removed successfully!");
     });
 
     document.getElementById("submitBtn").addEventListener("click", async () => {
@@ -141,7 +151,7 @@
         try {
             const genAI = new GoogleGenerativeAI(apiKey);
             
-            // Updated model pointer targeting the current version architecture
+            // Updated directly to target current engine guidelines
             const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 
             const result = await model.generateContent(question);
