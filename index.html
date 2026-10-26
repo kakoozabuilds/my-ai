@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cloud Personal AI</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .ai-card {
+            width: 100%;
+            max-width: 650px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-top: 40px;
+        }
+        h1 {
+            color: #1a1f36;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #697386;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #3c4257;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #a3acb9;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: border 0.15s ease;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #635bff;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #635bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        button:hover {
+            background-color: #0a2540;
+        }
+        .status {
+            display: none;
+            text-align: center;
+            color: #635bff;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        .response-container {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #635bff;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="ai-card">
+    <h1>My Personal AI</h1>
+    <div class="subtitle">Cloud Hosted Engine — Zero Setup Required</div>
+
+    <div class="input-group">
+        <label for="apiKeyField">🔑 Google Gemini API Key</label>
+        <input type="password" id="apiKeyField" placeholder="Paste your free API key here...">
+        <p style="font-size: 0.8rem; color: #697386; margin-top: 5px;">
+            Get a free key from <a href="https://google.com" target="_blank">Google AI Studio</a>. It saves securely in your browser.
+        </p>
+    </div>
+
+    <div class="input-group">
+        <label for="aiQuestion">❓ What is your question?</label>
+        <textarea id="aiQuestion" rows="4" placeholder="Ask anything. The AI can source information to answer..."></textarea>
+    </div>
+
+    <button onclick="executeAIQuery()">Ask My AI</button>
+
+    <div id="statusMessage" class="status">⚡ Thinking and searching web sources...</div>
+    <div id="outputBlock" class="response-container"></div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedKey = localStorage.getItem("personal_ai_key");
+        if (savedKey) {
+            document.getElementById("apiKeyField").value = savedKey;
+        }
+    });
+
+    async function executeAIQuery() {
+        const apiKey = document.getElementById("apiKeyField").value.trim();
+        const question = document.getElementById("aiQuestion").value.trim();
+        const statusBox = document.getElementById("statusMessage");
+        const outputBox = document.getElementById("outputBlock");
+
+        if (!apiKey || !question) {
+            alert("Please fill in both the API Key and your Question.");
+            return;
+        }
+
+        localStorage.setItem("personal_ai_key", apiKey);
+
+        statusBox.style.display = "block";
+        outputBox.style.display = "none";
+
+        try {
+            const apiEndpoint = `https://googleapis.com{apiKey}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: question }] }],
+                tools: [{ googleSearch: {} }] 
+            };
+
+            const webRequest = await fetch(apiEndpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const rawData = await webRequest.json();
+
+            if (rawData.candidates && rawData.candidates.content.parts.text) {
+                let textResult = rawData.candidates.content.parts.text;
+                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult.replace(/\n/g, "<br>")}`;
+                outputBox.style.display = "block";
+            } else {
+                outputBox.innerHTML = "⚠️ The AI processed the request but returned no text. Check your key permissions.";
+                outputBox.style.display = "block";
+            }
+        } catch (err) {
+            outputBox.innerHTML = `❌ Error reaching AI service: ${err.message}`;
+            outputBox.style.display = "block";
+        } finally {
+            statusBox.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>
