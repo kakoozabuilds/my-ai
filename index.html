@@ -122,7 +122,6 @@
         outputBox.innerHTML = "";
 
         try {
-            // Public, open-access inference route that allows direct browser connections
             const response = await fetch("https://huggingface.co", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -131,11 +130,14 @@
 
             const data = await response.json();
 
-            if (data && data[0] && data[0].generated_text) {
-                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${data[0].generated_text}`;
+            if (data && data.generated_text) {
+                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${data.generated_text}`;
                 outputBox.style.display = "block";
             } else if (data.error) {
-                outputBox.innerHTML = `❌ Model is loading on public servers. Please wait 10 seconds and click ask again.`;
+                outputBox.innerHTML = `❌ Model is waking up on the servers. Please wait 10 seconds and click ask again.`;
+                outputBox.style.display = "block";
+            } else if (Array.isArray(data) && data[0] && data[0].generated_text) {
+                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${data[0].generated_text}`;
                 outputBox.style.display = "block";
             } else {
                 outputBox.innerHTML = "⚠️ No answer returned. Try rephrasing your question.";
