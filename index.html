@@ -86,6 +86,17 @@
             border-radius: 8px;
             line-height: 1.6;
         }
+        .clear-btn {
+            text-align: right;
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+        .clear-btn span {
+            font-size: 0.85rem;
+            color: #d9383a;
+            cursor: pointer;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -102,24 +113,23 @@
         </p>
     </div>
 
-    <div class="input-group">
-        <label for="aiQuestion">❓ What is your question?</label>
-        <textarea id="aiQuestion" rows="4" placeholder="Ask anything. The AI will source information to answer..."></textarea>
+    <div class="clear-btn">
+        <span id="clearKeyLink">Clear Saved Key</span>
     </div>
 
-    <div class="input-group" style="text-align: right; margin-top: -10px;">
-        <span id="clearKeyLink" style="font-size: 0.85rem; color: #d9383a; cursor: pointer; text-decoration: underline;">Clear Saved Key</span>
+    <div class="input-group">
+        <label for="aiQuestion">❓ What is your question?</label>
+        <textarea id="aiQuestion" rows="4" placeholder="Ask anything. The AI will search web sources to answer..."></textarea>
     </div>
 
     <button id="submitBtn">Ask My AI</button>
 
-    <div id="statusMessage" class="status">⚡ Connection secure. Processing question...</div>
+    <div id="statusMessage" class="status">⚡ Connection secure. Sourcing information...</div>
     <div id="outputBlock" class="response-container"></div>
 </div>
 
-<script type="module">
-    import { GoogleGenerativeAI } from "https://jsdelivr.net";
-
+<script>
+    // Load previously saved key on page load
     document.addEventListener("DOMContentLoaded", () => {
         const savedKey = localStorage.getItem("personal_ai_key");
         if (savedKey) {
@@ -127,10 +137,11 @@
         }
     });
 
+    // Clear saved key function
     document.getElementById("clearKeyLink").addEventListener("click", () => {
         localStorage.removeItem("personal_ai_key");
         document.getElementById("apiKeyField").value = "";
-        alert("Saved API key removed successfully!");
+        alert("Saved API key removed!");
     });
 
     document.getElementById("submitBtn").addEventListener("click", async () => {
@@ -144,31 +155,59 @@
             return;
         }
 
+        // Save key locally for next time
         localStorage.setItem("personal_ai_key", apiKey);
+
         statusBox.style.display = "block";
         outputBox.style.display = "none";
+        outputBox.innerHTML = "";
 
         try {
-            const genAI = new GoogleGenerativeAI(apiKey);
+            // New official URL endpoint architecture for the latest model system
+            const apiEndpoint = `https://googleapis.com`;
             
-            // Updated directly to target current engine guidelines
-            const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
+            const payload = {
+                model: "gemini-3.8-flash",
+                input: question
+            };
 
-            const result = await model.generateContent(question);
-            const response = await result.response;
-            const textResult = response.text();
+            const webRequest = await fetch(apiEndpoint, {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": apiKey
+                },
+                body: JSON.stringify(payload)
+            });
 
-            if (textResult) {
-                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult
-                    .replace(/\n/g, "<br>")
-                    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
+            const rawData = await webRequest.json();
+
+            // Direct extraction based on Google's new system framework layout
+            if (rawData.steps && rawData.steps.length > 0) {
+                // Look for the output block step inside the response array
+                const outputStep = rawData.steps.find(step => step.type === "model_output");
+                
+                if (outputStep && outputStep.content && outputStep.content[0].text) {
+                    let textResult = outputStep.content[0].text;
+                    
+                    // Format response text with clear presentation tags
+                    outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult
+                        .replace(/\n/g, "<br>")
+                        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
+                    outputBox.style.display = "block";
+                } else {
+                    outputBox.innerHTML = "⚠️ The AI processed the request but returned no clear text answers.";
+                    outputBox.style.display = "block";
+                }
+            } else if (rawData.error) {
+                outputBox.innerHTML = `❌ API Server Error: ${rawData.error.message}`;
                 outputBox.style.display = "block";
             } else {
-                outputBox.innerHTML = "⚠️ AI connection completed, but no text format returned.";
+                outputBox.innerHTML = "⚠️ Unexpected response format from the server.";
                 outputBox.style.display = "block";
             }
         } catch (err) {
-            outputBox.innerHTML = `❌ System processing error: ${err.message}<br><br><small>Double check that your key contains no spaces at the start or end.</small>`;
+            outputBox.innerHTML = `❌ Browser Connection Error: ${err.message}`;
             outputBox.style.display = "block";
         } finally {
             statusBox.style.display = "none";
