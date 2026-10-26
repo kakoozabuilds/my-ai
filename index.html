@@ -88,7 +88,7 @@
         }
     </style>
 
-    <!-- Import Google's official, browser-approved AI module to bypass blocking -->
+    <!-- Unified CDN import layout -->
     <script type="importmap">
       {
         "imports": {
@@ -107,7 +107,7 @@
         <label for="apiKeyField">🔑 Google Gemini API Key</label>
         <input type="password" id="apiKeyField" placeholder="Paste your free API key here...">
         <p style="font-size: 0.8rem; color: #697386; margin-top: 5px;">
-            Get a free key from <a href="https://google.com" target="_blank">Google AI Studio</a>. It saves securely in your browser.
+            Get a free key from <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>. It saves securely in your browser.
         </p>
     </div>
 
@@ -118,14 +118,13 @@
 
     <button id="submitBtn">Ask My AI</button>
 
-    <div id="statusMessage" class="status">⚡ Connection secure. Sourcing information...</div>
+    <div id="statusMessage" class="status">⚡ Connection secure. Processing question...</div>
     <div id="outputBlock" class="response-container"></div>
 </div>
 
 <script type="module">
     import { GoogleGenerativeAI } from "@google/generative-ai";
 
-    // Auto-load saved key
     document.addEventListener("DOMContentLoaded", () => {
         const savedKey = localStorage.getItem("personal_ai_key");
         if (savedKey) {
@@ -133,7 +132,6 @@
         }
     });
 
-    // Attach click function safely within module system
     document.getElementById("submitBtn").addEventListener("click", async () => {
         const apiKey = document.getElementById("apiKeyField").value.trim();
         const question = document.getElementById("aiQuestion").value.trim();
@@ -150,29 +148,28 @@
         outputBox.style.display = "none";
 
         try {
-            // Use Google's secure browser handshake package
-            const aiInitializer = new GoogleGenerativeAI(apiKey);
+            // Direct system link
+            const genAI = new GoogleGenerativeAI(apiKey);
             
-            // Call the system model
-            const modelInstance = aiInitializer.getGenerativeModel({ 
-                model: "gemini-1.5-flash",
-                // Enables live Google search lookup grounding inside your browser window
-                tools: [{ googleSearch: {} }] 
-            });
+            // Standard clean browser instantiation 
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            const AIStreamResult = await modelInstance.generateContent(question);
-            const textResult = AIStreamResult.response.text();
+            const result = await model.generateContent(question);
+            const response = await result.response;
+            const textResult = response.text();
 
             if (textResult) {
-                // Convert formatting marks into standard browser HTML line breaks
-                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult.replace(/\n/g, "<br>").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
+                // Clean output formatting mapping
+                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult
+                    .replace(/\n/g, "<br>")
+                    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
                 outputBox.style.display = "block";
             } else {
-                outputBox.innerHTML = "⚠️ The AI processed the request but returned no text.";
+                outputBox.innerHTML = "⚠️ AI connection completed, but no text format returned.";
                 outputBox.style.display = "block";
             }
         } catch (err) {
-            outputBox.innerHTML = `❌ Error reaching AI service: ${err.message}<br><br><small>Tip: Verify your API key text is copied fully without trailing spaces.</small>`;
+            outputBox.innerHTML = `❌ System processing error: ${err.message}<br><br><small>Double check that your key contains no spaces at the start or end.</small>`;
             outputBox.style.display = "block";
         } finally {
             statusBox.style.display = "none";
