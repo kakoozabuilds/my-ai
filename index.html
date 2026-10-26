@@ -128,7 +128,10 @@
     <div id="outputBlock" class="response-container"></div>
 </div>
 
-<script>
+<!-- Loads Google's security script module directly into your browser webpage context -->
+<script type="module">
+    import { GoogleGenerativeAI } from "https://esm.run";
+
     document.addEventListener("DOMContentLoaded", () => {
         const savedKey = localStorage.getItem("personal_ai_key");
         if (savedKey) {
@@ -159,51 +162,25 @@
         outputBox.innerHTML = "";
 
         try {
-            // Using Google's standard open content generation endpoint to bypass CORS blockers
-            const apiEndpoint = `https://googleapis.com{apiKey}`;
-            
-            const payload = {
-                contents: [{
-                    parts: [{ text: question }]
-                }]
-            };
+            // Uses the secure Google Web SDK layout handshake framework
+            const aiHub = new GoogleGenerativeAI(apiKey);
+            const modelInstance = aiHub.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            const webRequest = await fetch(apiEndpoint, {
-                method: "POST",
-                headers: { 
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
+            const queryExecution = await modelInstance.generateContent(question);
+            const serverResponse = await queryExecution.response;
+            const textResult = serverResponse.text();
 
-            const rawData = await webRequest.json();
-
-            if (rawData.error) {
-                outputBox.innerHTML = `❌ API Server Error: ${rawData.error.message}`;
+            if (textResult) {
+                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult
+                    .replace(/\n/g, "<br>")
+                    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
                 outputBox.style.display = "block";
-                return;
+            } else {
+                outputBox.innerHTML = "⚠️ The AI processed the request, but data layout mismatch occurred.";
+                outputBox.style.display = "block";
             }
-
-            // Extracting response text from standard data architecture layout
-            if (rawData.candidates && rawData.candidates.length > 0) {
-                const candidate = rawData.candidates[0];
-                if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-                    let textResult = candidate.content.parts[0].text;
-                    
-                    // Format response text formatting into browser readable structure
-                    outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult
-                        .replace(/\n/g, "<br>")
-                        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
-                    outputBox.style.display = "block";
-                    return;
-                }
-            }
-            
-            outputBox.innerHTML = "⚠️ The AI processed the request, but data layout mismatch occurred.";
-            outputBox.style.display = "block";
-
         } catch (err) {
-            outputBox.innerHTML = `❌ Browser Connection Error: ${err.message}`;
+            outputBox.innerHTML = `❌ Connection Error: ${err.message}<br><br><small>Tip: Verify your API key has no extra spaces or blank characters.</small>`;
             outputBox.style.display = "block";
         } finally {
             statusBox.style.display = "none";
