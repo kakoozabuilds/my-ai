@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Cloud Personal AI</title>
+    <title>My Personal Unlimited AI</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -42,7 +42,7 @@
             margin-bottom: 8px;
             color: #3c4257;
         }
-        input, textarea {
+        textarea {
             width: 100%;
             padding: 14px;
             border: 1px solid #a3acb9;
@@ -50,8 +50,9 @@
             box-sizing: border-box;
             font-size: 1rem;
             transition: border 0.15s ease;
+            resize: vertical;
         }
-        input:focus, textarea:focus {
+        textarea:focus {
             outline: none;
             border-color: #635bff;
         }
@@ -86,128 +87,62 @@
             border-radius: 8px;
             line-height: 1.6;
         }
-        .clear-btn {
-            text-align: right;
-            margin-top: -10px;
-            margin-bottom: 15px;
-        }
-        .clear-btn span {
-            font-size: 0.85rem;
-            color: #d9383a;
-            cursor: pointer;
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
 
 <div class="ai-card">
     <h1>My Personal AI</h1>
-    <div class="subtitle">Cloud Hosted Engine — Zero Setup Required</div>
+    <div class="subtitle">Public Cloud Model Engine — No API Key Required</div>
 
     <div class="input-group">
-        <label for="apiKeyField">🔑 Google Gemini API Key</label>
-        <input type="password" id="apiKeyField" placeholder="Paste your free API key here...">
-        <p style="font-size: 0.8rem; color: #697386; margin-top: 5px;">
-            Get a free key from <a href="https://google.com" target="_blank">Google AI Studio</a>. It saves securely in your browser.
-        </p>
-    </div>
-
-    <div class="clear-btn">
-        <span id="clearKeyLink">Clear Saved Key</span>
-    </div>
-
-    <div class="input-group">
-        <label for="aiQuestion">❓ What is your question?</label>
-        <textarea id="aiQuestion" rows="4" placeholder="Ask anything..."></textarea>
+        <label for="aiQuestion">❓ Ask your AI any question:</label>
+        <textarea id="aiQuestion" rows="4" placeholder="Type your question here..."></textarea>
     </div>
 
     <button id="submitBtn">Ask My AI</button>
 
-    <div id="statusMessage" class="status">⚡ Securely routing through proxy... Sourcing information...</div>
+    <div id="statusMessage" class="status">⚡ Connecting to public model stream... Thinking...</div>
     <div id="outputBlock" class="response-container"></div>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const savedKey = localStorage.getItem("personal_ai_key");
-        if (savedKey) {
-            document.getElementById("apiKeyField").value = savedKey;
-        }
-    });
-
-    document.getElementById("clearKeyLink").addEventListener("click", () => {
-        localStorage.removeItem("personal_ai_key");
-        document.getElementById("apiKeyField").value = "";
-        alert("Saved API key removed!");
-    });
-
     document.getElementById("submitBtn").addEventListener("click", async () => {
-        const apiKey = document.getElementById("apiKeyField").value.trim();
         const question = document.getElementById("aiQuestion").value.trim();
         const statusBox = document.getElementById("statusMessage");
         const outputBox = document.getElementById("outputBlock");
 
-        if (!apiKey || !question) {
-            alert("Please fill in both the API Key and your Question.");
+        if (!question) {
+            alert("Please type a question first.");
             return;
         }
 
-        localStorage.setItem("personal_ai_key", apiKey);
         statusBox.style.display = "block";
         outputBox.style.display = "none";
         outputBox.innerHTML = "";
 
         try {
-            // Direct text generation URL for the latest available base model
-            const targetUrl = `https://googleapis.com{apiKey}`;
-            
-            // Wrap the target address inside the browser-approved proxy system to bypass security locks
-            const proxyUrl = `https://allorigins.win{encodeURIComponent(targetUrl)}`;
-
-            const payload = {
-                contents: [{
-                    parts: [{ text: question }]
-                }]
-            };
-
-            const webRequest = await fetch(proxyUrl, {
+            // Public, open-access inference route that allows direct browser connections
+            const response = await fetch("https://huggingface.co", {
                 method: "POST",
-                headers: { 
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ inputs: question })
             });
 
-            const proxyData = await webRequest.json();
-            
-            // Parse out the nested string return from the data bridge
-            const rawData = JSON.parse(proxyData.contents);
+            const data = await response.json();
 
-            if (rawData.error) {
-                outputBox.innerHTML = `❌ API Server Error: ${rawData.error.message}`;
+            if (data && data[0] && data[0].generated_text) {
+                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${data[0].generated_text}`;
                 outputBox.style.display = "block";
-                return;
+            } else if (data.error) {
+                outputBox.innerHTML = `❌ Model is loading on public servers. Please wait 10 seconds and click ask again.`;
+                outputBox.style.display = "block";
+            } else {
+                outputBox.innerHTML = "⚠️ No answer returned. Try rephrasing your question.";
+                outputBox.style.display = "block";
             }
-
-            if (rawData.candidates && rawData.candidates.length > 0) {
-                const parts = rawData.candidates[0].content.parts;
-                if (parts && parts.length > 0) {
-                    let textResult = parts[0].text;
-                    
-                    outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult
-                        .replace(/\n/g, "<br>")
-                        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
-                    outputBox.style.display = "block";
-                    return;
-                }
-            }
-            
-            outputBox.innerHTML = "⚠️ The AI processed the request, but data layout mismatch occurred.";
-            outputBox.style.display = "block";
-
         } catch (err) {
-            outputBox.innerHTML = `❌ Proxy Connection Error: ${err.message}<br><br><small>Ensure your API Key text string is completely valid.</small>`;
+            outputBox.innerHTML = `❌ Browser Error: ${err.message}`;
             outputBox.style.display = "block";
         } finally {
             statusBox.style.display = "none";
