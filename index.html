@@ -87,15 +87,6 @@
             line-height: 1.6;
         }
     </style>
-
-    <!-- Unified CDN import layout -->
-    <script type="importmap">
-      {
-        "imports": {
-          "@google/generative-ai": "https://esm.run"
-        }
-      }
-    </script>
 </head>
 <body>
 
@@ -107,7 +98,7 @@
         <label for="apiKeyField">🔑 Google Gemini API Key</label>
         <input type="password" id="apiKeyField" placeholder="Paste your free API key here...">
         <p style="font-size: 0.8rem; color: #697386; margin-top: 5px;">
-            Get a free key from <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>. It saves securely in your browser.
+            Get a free key from <a href="https://google.com" target="_blank">Google AI Studio</a>. It saves securely in your browser.
         </p>
     </div>
 
@@ -122,8 +113,9 @@
     <div id="outputBlock" class="response-container"></div>
 </div>
 
+<!-- Direct, browser-approved universal injection block -->
 <script type="module">
-    import { GoogleGenerativeAI } from "@google/generative-ai";
+    import { GoogleGenerativeAI } from "https://cdn.jsdelivr.net/npm/@google/generative-ai/+esm";
 
     document.addEventListener("DOMContentLoaded", () => {
         const savedKey = localStorage.getItem("personal_ai_key");
@@ -148,10 +140,7 @@
         outputBox.style.display = "none";
 
         try {
-            // Direct system link
             const genAI = new GoogleGenerativeAI(apiKey);
-            
-            // Standard clean browser instantiation 
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
             const result = await model.generateContent(question);
@@ -159,7 +148,6 @@
             const textResult = response.text();
 
             if (textResult) {
-                // Clean output formatting mapping
                 outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult
                     .replace(/\n/g, "<br>")
                     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
