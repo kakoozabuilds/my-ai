@@ -119,7 +119,7 @@
 
     <div class="input-group">
         <label for="aiQuestion">❓ What is your question?</label>
-        <textarea id="aiQuestion" rows="4" placeholder="Ask anything. The AI will search web sources to answer..."></textarea>
+        <textarea id="aiQuestion" rows="4" placeholder="Ask anything. The AI will source information to answer..."></textarea>
     </div>
 
     <button id="submitBtn">Ask My AI</button>
@@ -129,7 +129,6 @@
 </div>
 
 <script>
-    // Load previously saved key on page load
     document.addEventListener("DOMContentLoaded", () => {
         const savedKey = localStorage.getItem("personal_ai_key");
         if (savedKey) {
@@ -137,7 +136,6 @@
         }
     });
 
-    // Clear saved key function
     document.getElementById("clearKeyLink").addEventListener("click", () => {
         localStorage.removeItem("personal_ai_key");
         document.getElementById("apiKeyField").value = "";
@@ -155,15 +153,12 @@
             return;
         }
 
-        // Save key locally for next time
         localStorage.setItem("personal_ai_key", apiKey);
-
         statusBox.style.display = "block";
         outputBox.style.display = "none";
         outputBox.innerHTML = "";
 
         try {
-            // New official URL endpoint architecture for the latest model system
             const apiEndpoint = `https://googleapis.com`;
             
             const payload = {
@@ -182,30 +177,35 @@
 
             const rawData = await webRequest.json();
 
-            // Direct extraction based on Google's new system framework layout
-            if (rawData.steps && rawData.steps.length > 0) {
-                // Look for the output block step inside the response array
-                const outputStep = rawData.steps.find(step => step.type === "model_output");
-                
-                if (outputStep && outputStep.content && outputStep.content[0].text) {
-                    let textResult = outputStep.content[0].text;
-                    
-                    // Format response text with clear presentation tags
-                    outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult
-                        .replace(/\n/g, "<br>")
-                        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
-                    outputBox.style.display = "block";
-                } else {
-                    outputBox.innerHTML = "⚠️ The AI processed the request but returned no clear text answers.";
-                    outputBox.style.display = "block";
-                }
-            } else if (rawData.error) {
+            if (rawData.error) {
                 outputBox.innerHTML = `❌ API Server Error: ${rawData.error.message}`;
                 outputBox.style.display = "block";
-            } else {
-                outputBox.innerHTML = "⚠️ Unexpected response format from the server.";
-                outputBox.style.display = "block";
+                return;
             }
+
+            // Correct mapping to read Google's new deep inner data structures safely
+            if (rawData.steps && rawData.steps.length > 0) {
+                const outputStep = rawData.steps.find(step => step.type === "model_output");
+                
+                if (outputStep && outputStep.content && outputStep.content.length > 0) {
+                    const textItem = outputStep.content.find(item => item.type === "text");
+                    
+                    if (textItem && textItem.text) {
+                        let textResult = textItem.text;
+                        
+                        // Parse formatting tags neatly into the browser viewport
+                        outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult
+                            .replace(/\n/g, "<br>")
+                            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
+                        outputBox.style.display = "block";
+                        return;
+                    }
+                }
+            }
+            
+            outputBox.innerHTML = "⚠️ The AI processed the request, but data layout mismatch occurred.";
+            outputBox.style.display = "block";
+
         } catch (err) {
             outputBox.innerHTML = `❌ Browser Connection Error: ${err.message}`;
             outputBox.style.display = "block";
