@@ -113,9 +113,8 @@
     <div id="outputBlock" class="response-container"></div>
 </div>
 
-<!-- Direct, browser-approved universal injection block -->
 <script type="module">
-    import { GoogleGenerativeAI } from "https://cdn.jsdelivr.net/npm/@google/generative-ai/+esm";
+    import { GoogleGenerativeAI } from "https://jsdelivr.net";
 
     document.addEventListener("DOMContentLoaded", () => {
         const savedKey = localStorage.getItem("personal_ai_key");
@@ -141,6 +140,8 @@
 
         try {
             const genAI = new GoogleGenerativeAI(apiKey);
+            
+            // Updated model pointer targeting the current version architecture
             const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
             const result = await model.generateContent(question);
