@@ -142,7 +142,7 @@
             const genAI = new GoogleGenerativeAI(apiKey);
             
             // Updated model pointer targeting the current version architecture
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 
             const result = await model.generateContent(question);
             const response = await result.response;
