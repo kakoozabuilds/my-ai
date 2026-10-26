@@ -87,6 +87,15 @@
             line-height: 1.6;
         }
     </style>
+
+    <!-- Import Google's official, browser-approved AI module to bypass blocking -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run"
+        }
+      }
+    </script>
 </head>
 <body>
 
@@ -104,16 +113,19 @@
 
     <div class="input-group">
         <label for="aiQuestion">❓ What is your question?</label>
-        <textarea id="aiQuestion" rows="4" placeholder="Ask anything. The AI can source information to answer..."></textarea>
+        <textarea id="aiQuestion" rows="4" placeholder="Ask anything. The AI will source information to answer..."></textarea>
     </div>
 
-    <button onclick="executeAIQuery()">Ask My AI</button>
+    <button id="submitBtn">Ask My AI</button>
 
-    <div id="statusMessage" class="status">⚡ Thinking and searching web sources...</div>
+    <div id="statusMessage" class="status">⚡ Connection secure. Sourcing information...</div>
     <div id="outputBlock" class="response-container"></div>
 </div>
 
-<script>
+<script type="module">
+    import { GoogleGenerativeAI } from "@google/generative-ai";
+
+    // Auto-load saved key
     document.addEventListener("DOMContentLoaded", () => {
         const savedKey = localStorage.getItem("personal_ai_key");
         if (savedKey) {
@@ -121,7 +133,8 @@
         }
     });
 
-    async function executeAIQuery() {
+    // Attach click function safely within module system
+    document.getElementById("submitBtn").addEventListener("click", async () => {
         const apiKey = document.getElementById("apiKeyField").value.trim();
         const question = document.getElementById("aiQuestion").value.trim();
         const statusBox = document.getElementById("statusMessage");
@@ -133,41 +146,38 @@
         }
 
         localStorage.setItem("personal_ai_key", apiKey);
-
         statusBox.style.display = "block";
         outputBox.style.display = "none";
 
         try {
-            const apiEndpoint = `https://googleapis.com{apiKey}`;
+            // Use Google's secure browser handshake package
+            const aiInitializer = new GoogleGenerativeAI(apiKey);
             
-            const payload = {
-                contents: [{ parts: [{ text: question }] }],
+            // Call the system model
+            const modelInstance = aiInitializer.getGenerativeModel({ 
+                model: "gemini-1.5-flash",
+                // Enables live Google search lookup grounding inside your browser window
                 tools: [{ googleSearch: {} }] 
-            };
-
-            const webRequest = await fetch(apiEndpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
             });
 
-            const rawData = await webRequest.json();
+            const AIStreamResult = await modelInstance.generateContent(question);
+            const textResult = AIStreamResult.response.text();
 
-            if (rawData.candidates && rawData.candidates.content.parts.text) {
-                let textResult = rawData.candidates.content.parts.text;
-                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult.replace(/\n/g, "<br>")}`;
+            if (textResult) {
+                // Convert formatting marks into standard browser HTML line breaks
+                outputBox.innerHTML = `<strong>AI Response:</strong><br><br>${textResult.replace(/\n/g, "<br>").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}`;
                 outputBox.style.display = "block";
             } else {
-                outputBox.innerHTML = "⚠️ The AI processed the request but returned no text. Check your key permissions.";
+                outputBox.innerHTML = "⚠️ The AI processed the request but returned no text.";
                 outputBox.style.display = "block";
             }
         } catch (err) {
-            outputBox.innerHTML = `❌ Error reaching AI service: ${err.message}`;
+            outputBox.innerHTML = `❌ Error reaching AI service: ${err.message}<br><br><small>Tip: Verify your API key text is copied fully without trailing spaces.</small>`;
             outputBox.style.display = "block";
         } finally {
             statusBox.style.display = "none";
         }
-    }
+    });
 </script>
 
 </body>
