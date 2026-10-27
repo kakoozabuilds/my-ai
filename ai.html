@@ -42,7 +42,7 @@
             margin-bottom: 8px;
             color: #3c4257;
         }
-        textarea {
+        input[type="password"], textarea {
             width: 100%;
             padding: 14px;
             border: 1px solid #a3acb9;
@@ -50,9 +50,11 @@
             box-sizing: border-box;
             font-size: 1rem;
             transition: border 0.15s ease;
+        }
+        textarea {
             resize: vertical;
         }
-        textarea:focus {
+        input[type="password"]:focus, textarea:focus {
             outline: none;
             border-color: #635bff;
         }
@@ -90,7 +92,7 @@
             border-left: 4px solid #635bff;
             border-radius: 8px;
             line-height: 1.6;
-            white-space: pre-wrap; /* Preserves line breaks from the AI response */
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -99,6 +101,11 @@
 <div class="ai-card">
     <h1>My Personal AI</h1>
     <div class="subtitle">Cloud API Connected Engine — Powered by OpenAI</div>
+
+    <div class="input-group">
+        <label for="apiKey">🔑 Enter your OpenAI API Key:</label>
+        <input type="password" id="apiKey" placeholder="sk-proj-..." />
+    </div>
 
     <div class="input-group">
         <label for="aiQuestion">❓ Ask your AI any question:</label>
@@ -112,27 +119,23 @@
 </div>
 
 <script>
-    // ⚠️ CRITICAL WARNING: Replace the string below with your actual secret key.
-    // DO NOT push this code to a public GitHub repository with your real key exposed!
-    const OPENAI_API_KEY = "YOUR_OPENAI_API_KEY_HERE";
-
     document.getElementById("submitBtn").addEventListener("click", async function() {
+        const apiKey = document.getElementById("apiKey").value.trim();
         const question = document.getElementById("aiQuestion").value.trim();
         const statusBox = document.getElementById("statusMessage");
         const outputBox = document.getElementById("outputBlock");
         const submitBtn = document.getElementById("submitBtn");
+
+        if (!apiKey) {
+            alert("Please enter your OpenAI API key first.");
+            return;
+        }
 
         if (!question) {
             alert("Please type a question first.");
             return;
         }
 
-        if (OPENAI_API_KEY === "YOUR_OPENAI_API_KEY_HERE") {
-            alert("Please add your OpenAI API key inside the script tag code first!");
-            return;
-        }
-
-        // Update UI states to loading
         submitBtn.disabled = true;
         statusBox.style.display = "block";
         outputBox.style.display = "none";
@@ -143,10 +146,10 @@
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${OPENAI_API_KEY}`
+                    "Authorization": `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
-                    model: "gpt-4o-mini", // Fast, highly competent, and cost-efficient model
+                    model: "gpt-4o-mini",
                     messages: [
                         { role: "system", content: "You are a helpful, concise personal assistant." },
                         { role: "user", content: question }
