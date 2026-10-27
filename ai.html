@@ -102,9 +102,10 @@
     <h1>My Personal AI</h1>
     <div class="subtitle">Cloud API Connected Engine — Powered by Google Gemini</div>
 
+    <!-- The API key input block -->
     <div class="input-group">
         <label for="apiKey">🔑 Enter your Google AI Studio API Key:</label>
-        <input type="password" id="apiKey" placeholder="Starts with AIzaSy... or AQ..." />
+        <input type="password" id="apiKey" placeholder="Paste your AQ... or AIzaSy... key here" />
     </div>
 
     <div class="input-group">
@@ -136,14 +137,13 @@
             return;
         }
 
-        // Adjust UI loading states
         submitBtn.disabled = true;
         statusBox.style.display = "block";
         outputBox.style.display = "none";
         outputBox.innerHTML = "";
 
         try {
-            // Using the ultra-fast, modern Gemini 1.5 Flash model endpoint
+            // Official Google Gemini API Endpoint URL
             const url = `https://googleapis.com{apiKey}`;
 
             const response = await fetch(url, {
@@ -165,7 +165,7 @@
 
             const data = await response.json();
             
-            // Extract the generated text from Gemini's JSON structure
+            // Correct path to parse text out of Google Gemini's response object
             const aiReply = data.candidates[0].content.parts[0].text;
 
             outputBox.innerHTML = "<strong>AI Response:</strong><br><br>" + aiReply;
